@@ -19,7 +19,7 @@ export function slugify(text) {
  * @returns {string}
  */
 export function truncate(text, max) {
-  if (text.length < max) return text
+  if (text.length <= max) return text
   return text.slice(0, max - 1) + '…'
 }
 

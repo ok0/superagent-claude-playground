@@ -11,6 +11,10 @@ test('truncate keeps short text', () => {
   assert.equal(truncate('hi', 5), 'hi')
 })
 
+test('truncate keeps text that exactly fits', () => {
+  assert.equal(truncate('hello', 5), 'hello')
+})
+
 test('truncate shortens long text with an ellipsis', () => {
   assert.equal(truncate('hello world', 6), 'hello…')
 })
