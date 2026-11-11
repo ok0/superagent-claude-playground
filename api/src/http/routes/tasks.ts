@@ -1,5 +1,6 @@
 import { authenticate } from '../../auth/middleware.ts'
 import type { AppConfig } from '../../config/index.ts'
+import { ValidationError } from '../../services/errors.ts'
 import type { TaskService } from '../../services/task-service.ts'
 import { readJson } from '../body.ts'
 import { decodeCursor, encodeCursor } from '../cursor.ts'
@@ -14,7 +15,9 @@ export function taskRoutes(deps: { service: TaskService; config: AppConfig }): R
       pattern: '/tasks',
       handler: ({ req, res, url }) => {
         authenticate(req.headers.authorization, config.tokens)
-        const limit = Math.min(Number(url.searchParams.get('limit') ?? config.pageSize), config.maxPageSize)
+        const rawLimit = Number(url.searchParams.get('limit') ?? config.pageSize)
+        if (!Number.isInteger(rawLimit) || rawLimit < 1) throw new ValidationError('invalid limit')
+        const limit = Math.min(rawLimit, config.maxPageSize)
         const start = decodeCursor(url.searchParams.get('cursor'))
         const page = service.list({ start, limit })
         sendJson(res, 200, {
