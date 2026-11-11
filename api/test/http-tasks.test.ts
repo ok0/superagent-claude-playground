@@ -111,3 +111,12 @@ test('GET /tasks returns a single page containing every task', () =>
     assert.equal(body.items.length, 1)
     assert.equal(body.nextCursor, null)
   }))
+
+test('GET /tasks with a zero, negative or fractional limit returns 400', () =>
+  withServer(async (base) => {
+    for (const limit of ['0', '-1', '1.5', 'abc']) {
+      const res = await fetch(base + '/tasks?limit=' + limit, { headers: AUTH_A })
+      assert.equal(res.status, 400, limit)
+      await res.text()
+    }
+  }))
