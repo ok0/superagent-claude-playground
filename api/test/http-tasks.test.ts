@@ -84,3 +84,38 @@ test('GET /tasks pages with a cursor', () =>
     const secondBody = (await second.json()) as { items: { id: string }[] }
     assert.deepEqual(secondBody.items.map((t) => t.id), ['task-2'])
   }))
+
+test('GET /tasks pages through every task', () =>
+  withServer(async (base) => {
+    const titles = ['one', 'two', 'three', 'four', 'five']
+    for (const title of titles) {
+      const created = await createTask(base, { title })
+      await created.text()
+    }
+    const seen: string[] = []
+    let cursor: string | null = null
+    let pages = 0
+    do {
+      const url: string = base + '/tasks?limit=2' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '')
+      const res = await fetch(url, { headers: AUTH_A })
+      assert.equal(res.status, 200)
+      const body = (await res.json()) as { items: { title: string }[]; nextCursor: string | null }
+      seen.push(...body.items.map((t) => t.title))
+      cursor = body.nextCursor
+      pages++
+    } while (cursor !== null && pages < 10)
+    assert.deepEqual(seen, titles)
+    assert.equal(pages, 3)
+  }))
+
+test('GET /tasks returns every task in a single page', () =>
+  withServer(async (base) => {
+    for (const title of ['one', 'two']) {
+      const created = await createTask(base, { title })
+      await created.text()
+    }
+    const res = await fetch(base + '/tasks', { headers: AUTH_A })
+    const body = (await res.json()) as { items: { title: string }[]; nextCursor: string | null }
+    assert.deepEqual(body.items.map((t) => t.title), ['one', 'two'])
+    assert.equal(body.nextCursor, null)
+  }))
