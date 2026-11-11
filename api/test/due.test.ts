@@ -24,6 +24,15 @@ test('isDueToday matches only the current day', () => {
   assert.equal(isDueToday({ dueDate: '2026-01-06' }, at), false)
 })
 
-test('a task due today counts as due today', () => {
-  assert.equal(isDueToday({ dueDate: dayKey(new Date()) }), true)
+test('a task due today counts as due today', (t) => {
+  // Pin the clock used by the default `at`, so the result depends neither on
+  // the wall clock (midnight rollover) nor on a FAKE_NOW set in the environment.
+  const previous = process.env.FAKE_NOW
+  t.after(() => {
+    if (previous === undefined) delete process.env.FAKE_NOW
+    else process.env.FAKE_NOW = previous
+  })
+  process.env.FAKE_NOW = new Date(2026, 0, 5, 12).toISOString()
+  assert.equal(isDueToday({ dueDate: '2026-01-05' }), true)
+  assert.equal(isDueToday({ dueDate: '2026-01-06' }), false)
 })
