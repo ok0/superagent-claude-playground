@@ -84,3 +84,52 @@ test('GET /tasks pages with a cursor', () =>
     const secondBody = (await second.json()) as { items: { id: string }[] }
     assert.deepEqual(secondBody.items.map((t) => t.id), ['task-2'])
   }))
+
+const patchTask = (base: string, id: string, body: unknown, headers: Record<string, string> = AUTH_A) =>
+  fetch(base + '/tasks/' + id, {
+    method: 'PATCH',
+    headers: { ...headers, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+test('PATCH /tasks/:id updates only the given fields and returns the task', () =>
+  withServer(async (base) => {
+    await (await createTask(base, { title: 'orig', dueDate: '2026-03-01' })).text()
+    const res = await patchTask(base, 'task-1', { status: 'doing' })
+    assert.equal(res.status, 200)
+    const body = (await res.json()) as { id: string; title: string; status: string; dueDate: string }
+    assert.equal(body.id, 'task-1')
+    assert.equal(body.title, 'orig')
+    assert.equal(body.status, 'doing')
+    assert.equal(body.dueDate, '2026-03-01')
+    const fetched = await fetch(base + '/tasks/task-1', { headers: AUTH_A })
+    assert.equal(((await fetched.json()) as { status: string }).status, 'doing')
+  }))
+
+test('PATCH /tasks/:id returns 400 for invalid fields', () =>
+  withServer(async (base) => {
+    await (await createTask(base, { title: 'orig' })).text()
+    for (const bad of [{}, { title: '' }, { status: 'nope' }, { dueDate: 'tomorrow' }, { extra: 1 }]) {
+      const res = await patchTask(base, 'task-1', bad)
+      assert.equal(res.status, 400)
+      await res.text()
+    }
+  }))
+
+test('PATCH /tasks/:id returns 404 for an unknown id', () =>
+  withServer(async (base) => {
+    const res = await patchTask(base, 'task-404', { title: 'x' })
+    assert.equal(res.status, 404)
+    await res.text()
+  }))
+
+test('PATCH /tasks/:id returns 403 for a non-owner and 401 without a token', () =>
+  withServer(async (base) => {
+    await (await createTask(base, { title: 'mine' })).text()
+    const denied = await patchTask(base, 'task-1', { title: 'x' }, AUTH_B)
+    assert.equal(denied.status, 403)
+    await denied.text()
+    const anon = await patchTask(base, 'task-1', { title: 'x' }, {})
+    assert.equal(anon.status, 401)
+    await anon.text()
+  }))
