@@ -1,5 +1,3 @@
-import { SlowBuffer } from 'node:buffer'
-
 export class LineBuffer {
   private readonly sink: (chunk: string) => void
   private readonly capacity: number
@@ -9,7 +7,7 @@ export class LineBuffer {
   constructor(sink: (chunk: string) => void, capacity = 4096) {
     this.sink = sink
     this.capacity = capacity
-    this.store = new SlowBuffer(capacity)
+    this.store = Buffer.allocUnsafeSlow(capacity)
     this.used = 0
   }
 
