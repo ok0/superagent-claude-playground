@@ -119,3 +119,12 @@ test('GET /tasks returns every task in a single page', () =>
     assert.deepEqual(body.items.map((t) => t.title), ['one', 'two'])
     assert.equal(body.nextCursor, null)
   }))
+
+test('GET /tasks returns 400 for a limit that is zero, negative or not a whole number', () =>
+  withServer(async (base) => {
+    for (const limit of ['0', '-1', '1.5', 'abc', '']) {
+      const res = await fetch(base + '/tasks?limit=' + limit, { headers: AUTH_A })
+      assert.equal(res.status, 400, 'limit=' + limit)
+      await res.text()
+    }
+  }))

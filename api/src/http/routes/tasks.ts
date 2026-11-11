@@ -3,8 +3,18 @@ import type { AppConfig } from '../../config/index.ts'
 import type { TaskService } from '../../services/task-service.ts'
 import { readJson } from '../body.ts'
 import { decodeCursor, encodeCursor } from '../cursor.ts'
+import { ValidationError } from '../../services/errors.ts'
 import { sendJson } from '../respond.ts'
 import type { Route } from '../router.ts'
+
+function parseLimit(raw: string | null, fallback: number): number {
+  if (raw === null) return fallback
+  const limit = Number(raw)
+  if (!/^\d+$/.test(raw) || !Number.isSafeInteger(limit) || limit < 1) {
+    throw new ValidationError('limit must be a positive whole number')
+  }
+  return limit
+}
 
 export function taskRoutes(deps: { service: TaskService; config: AppConfig }): Route[] {
   const { service, config } = deps
@@ -14,7 +24,7 @@ export function taskRoutes(deps: { service: TaskService; config: AppConfig }): R
       pattern: '/tasks',
       handler: ({ req, res, url }) => {
         authenticate(req.headers.authorization, config.tokens)
-        const limit = Math.min(Number(url.searchParams.get('limit') ?? config.pageSize), config.maxPageSize)
+        const limit = Math.min(parseLimit(url.searchParams.get('limit'), config.pageSize), config.maxPageSize)
         const start = decodeCursor(url.searchParams.get('cursor'))
         const page = service.list({ start, limit })
         sendJson(res, 200, {
