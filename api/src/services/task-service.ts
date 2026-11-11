@@ -42,10 +42,10 @@ export function createTaskService(deps: { store: TaskStore; nextId?: () => strin
       return task
     },
     list(o) {
-      const last = store.lastIndex()
-      const end = Math.min(o.start + o.limit, last)
+      const total = store.count()
+      const end = Math.min(o.start + o.limit, total)
       const items = store.all().slice(o.start, end)
-      return { items, next: end < last ? end : null }
+      return { items, next: end < total ? end : null }
     },
     remove(id, userId) {
       const task = store.get(id)
