@@ -15,6 +15,12 @@ test('truncate keeps text that exactly fits', () => {
   assert.equal(truncate('hello', 5), 'hello')
 })
 
+test('truncate returns an empty string when max is 0 or negative', () => {
+  assert.equal(truncate('hello', 0), '')
+  assert.equal(truncate('hello', -3), '')
+  assert.equal(truncate('', 0), '')
+})
+
 test('truncate shortens long text with an ellipsis', () => {
   assert.equal(truncate('hello world', 6), 'hello…')
 })
