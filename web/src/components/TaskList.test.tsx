@@ -40,19 +40,27 @@ describe('TaskList', () => {
 
     afterEach(() => vi.useRealTimers())
 
-    it('an overdue task row has the same DOM as a task that is not due', () => {
+    it('marks an open task with a past due date as overdue', () => {
+      render(<TaskList tasks={[task('task-1', { dueDate: '2000-01-01' })]} />)
+      const row = screen.getByRole('listitem')
+      expect(row.className).toContain('task-row-overdue')
+      expect(row.textContent).toContain('Overdue')
+    })
+
+    it('does not mark future, undated or done tasks as overdue', () => {
       render(
         <TaskList
           tasks={[
-            task('task-1', { title: 'Same', dueDate: '2000-01-01' }),
-            task('task-2', { title: 'Same', dueDate: '2999-12-31' }),
+            task('task-1', { dueDate: '2999-12-31' }),
+            task('task-2', { dueDate: null }),
+            task('task-3', { dueDate: '2000-01-01', status: 'done' }),
           ]}
         />,
       )
-      const rows = screen.getAllByRole('listitem')
-      expect(rows[0].outerHTML.replace('2000-01-01', 'DATE')).toBe(rows[1].outerHTML.replace('2999-12-31', 'DATE'))
-      expect(rows[0].className).toBe(rows[1].className)
-      expect(rows[0].getAttributeNames()).toEqual(rows[1].getAttributeNames())
+      for (const row of screen.getAllByRole('listitem')) {
+        expect(row.className).not.toContain('task-row-overdue')
+        expect(row.textContent).not.toContain('Overdue')
+      }
     })
   })
 })
