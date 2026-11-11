@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { ValidationError } from '../src/services/errors.ts'
-import { validateNewTask } from '../src/services/validation.ts'
+import { validateNewTask, validateTaskPatch } from '../src/services/validation.ts'
 
 test('a valid task input is accepted', () => {
   const input = validateNewTask({ title: 'write docs', status: 'doing', dueDate: '2026-02-28' })
@@ -28,4 +28,15 @@ test('an impossible calendar date throws ValidationError', () => {
 
 test('an unknown key throws ValidationError', () => {
   assert.throws(() => validateNewTask({ title: 'a', extra: true }), ValidationError)
+})
+
+test('validateTaskPatch accepts a subset of fields', () => {
+  assert.deepEqual(validateTaskPatch({ title: ' hi ' }), { title: 'hi' })
+  assert.deepEqual(validateTaskPatch({ dueDate: null, status: 'doing' }), { dueDate: null, status: 'doing' })
+})
+
+test('validateTaskPatch rejects empty, unknown and invalid fields', () => {
+  for (const bad of [{}, { id: 'x' }, { title: 5 }, { status: null }, { dueDate: 'soon' }]) {
+    assert.throws(() => validateTaskPatch(bad), ValidationError)
+  }
 })

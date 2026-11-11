@@ -19,6 +19,7 @@ The `api` workspace is a small HTTP task API. Its source is split into the `src/
 - `GET /tasks?limit&cursor`
 - `POST /tasks`
 - `GET /tasks/:id`
+- `PATCH /tasks/:id` (partial update of `title`, `status`, `dueDate`; owner only)
 - `DELETE /tasks/:id`
 
 Task routes require a Bearer token from `API_TOKENS`.
