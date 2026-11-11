@@ -41,15 +41,6 @@ export function taskRoutes(deps: { service: TaskService; config: AppConfig }): R
       },
     },
     {
-      method: 'PATCH',
-      pattern: '/tasks/:id',
-      handler: async ({ req, res, params }) => {
-        const userId = authenticate(req.headers.authorization, config.tokens)
-        const body = await readJson(req)
-        sendJson(res, 200, service.update(params.id!, body, userId))
-      },
-    },
-    {
       method: 'DELETE',
       pattern: '/tasks/:id',
       handler: ({ req, res, params }) => {
