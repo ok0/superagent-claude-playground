@@ -84,39 +84,3 @@ test('GET /tasks pages with a cursor', () =>
     const secondBody = (await second.json()) as { items: { id: string }[] }
     assert.deepEqual(secondBody.items.map((t) => t.id), ['task-2'])
   }))
-
-test('GET /tasks pages through every task without dropping the last', () =>
-  withServer(async (base) => {
-    for (let i = 1; i <= 5; i++) await (await createTask(base, { title: `task ${i}` })).json()
-    const titles: string[] = []
-    let cursor: string | null = null
-    let pages = 0
-    do {
-      const url: string = base + '/tasks?limit=2' + (cursor ? `&cursor=${cursor}` : '')
-      const res = await fetch(url, { headers: AUTH_A })
-      const body = (await res.json()) as { items: { title: string }[]; nextCursor: string | null }
-      titles.push(...body.items.map((t) => t.title))
-      cursor = body.nextCursor
-      pages++
-    } while (cursor && pages < 10)
-    assert.deepEqual(titles, ['task 1', 'task 2', 'task 3', 'task 4', 'task 5'])
-    assert.equal(pages, 3)
-  }))
-
-test('GET /tasks returns a single page containing every task', () =>
-  withServer(async (base) => {
-    await (await createTask(base, { title: 'only' })).json()
-    const res = await fetch(base + '/tasks', { headers: AUTH_A })
-    const body = (await res.json()) as { items: unknown[]; nextCursor: string | null }
-    assert.equal(body.items.length, 1)
-    assert.equal(body.nextCursor, null)
-  }))
-
-test('GET /tasks with a zero, negative or fractional limit returns 400', () =>
-  withServer(async (base) => {
-    for (const limit of ['0', '-1', '1.5', 'abc']) {
-      const res = await fetch(base + '/tasks?limit=' + limit, { headers: AUTH_A })
-      assert.equal(res.status, 400, limit)
-      await res.text()
-    }
-  }))

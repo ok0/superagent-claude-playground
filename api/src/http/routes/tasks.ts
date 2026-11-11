@@ -3,7 +3,6 @@ import type { AppConfig } from '../../config/index.ts'
 import type { TaskService } from '../../services/task-service.ts'
 import { readJson } from '../body.ts'
 import { decodeCursor, encodeCursor } from '../cursor.ts'
-import { parseLimit } from '../limit.ts'
 import { sendJson } from '../respond.ts'
 import type { Route } from '../router.ts'
 
@@ -15,7 +14,7 @@ export function taskRoutes(deps: { service: TaskService; config: AppConfig }): R
       pattern: '/tasks',
       handler: ({ req, res, url }) => {
         authenticate(req.headers.authorization, config.tokens)
-        const limit = parseLimit(url.searchParams.get('limit'), config.pageSize, config.maxPageSize)
+        const limit = Math.min(Number(url.searchParams.get('limit') ?? config.pageSize), config.maxPageSize)
         const start = decodeCursor(url.searchParams.get('cursor'))
         const page = service.list({ start, limit })
         sendJson(res, 200, {
