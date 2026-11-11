@@ -24,6 +24,15 @@ export function truncate(text, max) {
 }
 
 /**
+ * Upper-case the first letter of every word, keeping the rest as is.
+ * @param {string} text
+ * @returns {string}
+ */
+export function titleCase(text) {
+  return text.replace(/(^|\s)(\S)/g, (_, space, ch) => space + ch.toUpperCase())
+}
+
+/**
  * Count the words in text.
  * @param {string} text
  * @returns {number}
