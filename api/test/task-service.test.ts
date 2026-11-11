@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ForbiddenError, NotFoundError } from '../src/services/errors.ts'
+import { ForbiddenError, NotFoundError, ValidationError } from '../src/services/errors.ts'
 import { createTaskService } from '../src/services/task-service.ts'
 import { createIdGenerator } from '../src/store/ids.ts'
 import { createMemoryStore } from '../src/store/memory-store.ts'
@@ -42,4 +42,41 @@ test('list returns the first page of four tasks', () => {
   const page = service.list({ start: 0, limit: 2 })
   assert.deepEqual(page.items.map((t) => t.id), ['task-1', 'task-2'])
   assert.equal(page.next, 2)
+})
+
+test('update changes only the given fields and bumps updatedAt', () => {
+  const later = new Date('2026-01-06T10:00:00.000Z')
+  let current = at
+  const service = createTaskService({
+    store: createMemoryStore(),
+    nextId: createIdGenerator(),
+    now: () => current,
+  })
+  service.create({ title: 'orig', dueDate: '2026-02-01' }, 'alice')
+  current = later
+  const updated = service.update('task-1', { status: 'done' }, 'alice')
+  assert.equal(updated.status, 'done')
+  assert.equal(updated.title, 'orig')
+  assert.equal(updated.dueDate, '2026-02-01')
+  assert.equal(updated.createdAt, at.toISOString())
+  assert.equal(updated.updatedAt, later.toISOString())
+  assert.equal(service.update('task-1', { dueDate: null, title: ' new ' }, 'alice').title, 'new')
+  assert.equal(service.get('task-1').dueDate, null)
+})
+
+test('update validates fields like create', () => {
+  const service = makeService()
+  service.create({ title: 'x' }, 'alice')
+  for (const bad of [{}, { title: '' }, { status: 'nope' }, { dueDate: '2026-02-30' }, { foo: 1 }, [], null]) {
+    assert.throws(() => service.update('task-1', bad, 'alice'), ValidationError)
+  }
+  assert.equal(service.get('task-1').title, 'x')
+})
+
+test('update throws NotFoundError for an unknown id and ForbiddenError for a non-owner', () => {
+  const service = makeService()
+  service.create({ title: 'mine' }, 'alice')
+  assert.throws(() => service.update('task-404', { title: 'a' }, 'alice'), NotFoundError)
+  assert.throws(() => service.update('task-1', { title: 'a' }, 'bob'), ForbiddenError)
+  assert.equal(service.get('task-1').title, 'mine')
 })
