@@ -4,7 +4,7 @@ import type { TaskStore } from '../store/memory-store.ts'
 import { createIdGenerator } from '../store/ids.ts'
 import type { Task } from '../store/types.ts'
 import { ForbiddenError, NotFoundError } from './errors.ts'
-import { validateNewTask } from './validation.ts'
+import { validateNewTask, validateTaskPatch } from './validation.ts'
 
 export interface TaskPage {
   items: Task[]
@@ -15,6 +15,7 @@ export interface TaskService {
   create(input: unknown, ownerId: string): Task
   get(id: string): Task
   list(o: { start: number; limit: number }): TaskPage
+  update(id: string, input: unknown, userId: string): Task
   remove(id: string, userId: string): void
 }
 
@@ -46,6 +47,13 @@ export function createTaskService(deps: { store: TaskStore; nextId?: () => strin
       const end = Math.min(o.start + o.limit, last)
       const items = store.all().slice(o.start, end)
       return { items, next: end < last ? end : null }
+    },
+    update(id, input, userId) {
+      const task = store.get(id)
+      if (!task) throw new NotFoundError('task not found')
+      if (!canModify(task, userId)) throw new ForbiddenError('not allowed to update this task')
+      const patch = validateTaskPatch(input)
+      return store.replace({ ...task, ...patch, updatedAt: clock().toISOString() })
     },
     remove(id, userId) {
       const task = store.get(id)

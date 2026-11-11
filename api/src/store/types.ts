@@ -17,3 +17,5 @@ export interface NewTask {
   status?: TaskStatus
   dueDate?: string | null
 }
+
+export type TaskPatch = Partial<NewTask>

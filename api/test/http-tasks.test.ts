@@ -84,3 +84,38 @@ test('GET /tasks pages with a cursor', () =>
     const secondBody = (await second.json()) as { items: { id: string }[] }
     assert.deepEqual(secondBody.items.map((t) => t.id), ['task-2'])
   }))
+
+const patchTask = (base: string, id: string, body: unknown, headers: Record<string, string> = AUTH_A) =>
+  fetch(base + '/tasks/' + id, {
+    method: 'PATCH',
+    headers: { ...headers, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+test('PATCH /tasks/:id updates only the given fields and returns the task', () =>
+  withServer(async (base) => {
+    await (await createTask(base, { title: 'orig', dueDate: '2026-03-01' })).text()
+    const res = await patchTask(base, 'task-1', { status: 'done' })
+    assert.equal(res.status, 200)
+    const body = (await res.json()) as { title: string; status: string; dueDate: string }
+    assert.equal(body.status, 'done')
+    assert.equal(body.title, 'orig')
+    assert.equal(body.dueDate, '2026-03-01')
+  }))
+
+test('PATCH /tasks/:id returns 400, 404, 403 and 401 for bad requests', () =>
+  withServer(async (base) => {
+    await (await createTask(base, { title: 'orig' })).text()
+    const invalid = await patchTask(base, 'task-1', { status: 'nope' })
+    assert.equal(invalid.status, 400)
+    await invalid.text()
+    const missing = await patchTask(base, 'task-404', { title: 'a' })
+    assert.equal(missing.status, 404)
+    await missing.text()
+    const denied = await patchTask(base, 'task-1', { title: 'a' }, AUTH_B)
+    assert.equal(denied.status, 403)
+    await denied.text()
+    const anon = await fetch(base + '/tasks/task-1', { method: 'PATCH', body: '{}' })
+    assert.equal(anon.status, 401)
+    await anon.text()
+  }))
