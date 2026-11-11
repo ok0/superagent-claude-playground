@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import type { Task } from '../types.ts'
-import { TaskRow } from './TaskRow.tsx'
+import { TaskRow, isOverdue } from './TaskRow.tsx'
 
 const task = (id: string, over: Partial<Task> = {}): Task => ({
   id,
@@ -36,5 +36,25 @@ describe('TaskRow', () => {
       </ul>,
     )
     expect(screen.getByRole('listitem').textContent).toContain('No due date')
+  })
+
+  const at = new Date(2024, 5, 15, 12)
+
+  it('flags open tasks past their due date as overdue', () => {
+    render(
+      <ul>
+        <TaskRow task={task('task-1', { dueDate: '2024-06-14' })} now={at} />
+      </ul>,
+    )
+    const row = screen.getByRole('listitem')
+    expect(row.className).toContain('task-row-overdue')
+    expect(row.textContent).toContain('Overdue')
+  })
+
+  it('does not flag tasks due today, in the future, done, or undated', () => {
+    expect(isOverdue({ dueDate: '2024-06-15', status: 'todo' }, at)).toBe(false)
+    expect(isOverdue({ dueDate: '2024-06-16', status: 'doing' }, at)).toBe(false)
+    expect(isOverdue({ dueDate: '2024-06-01', status: 'done' }, at)).toBe(false)
+    expect(isOverdue({ dueDate: null, status: 'todo' }, at)).toBe(false)
   })
 })
