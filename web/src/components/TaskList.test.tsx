@@ -40,19 +40,20 @@ describe('TaskList', () => {
 
     afterEach(() => vi.useRealTimers())
 
-    it('an overdue task row has the same DOM as a task that is not due', () => {
+    it('marks an overdue task row and leaves a future one unmarked', () => {
       render(
         <TaskList
           tasks={[
-            task('task-1', { title: 'Same', dueDate: '2000-01-01' }),
-            task('task-2', { title: 'Same', dueDate: '2999-12-31' }),
+            task('task-1', { title: 'Late', dueDate: '2000-01-01' }),
+            task('task-2', { title: 'Later', dueDate: '2999-12-31' }),
           ]}
         />,
       )
       const rows = screen.getAllByRole('listitem')
-      expect(rows[0].outerHTML.replace('2000-01-01', 'DATE')).toBe(rows[1].outerHTML.replace('2999-12-31', 'DATE'))
-      expect(rows[0].className).toBe(rows[1].className)
-      expect(rows[0].getAttributeNames()).toEqual(rows[1].getAttributeNames())
+      expect(rows[0].className).toContain('task-row-overdue')
+      expect(rows[0].textContent).toContain('Overdue')
+      expect(rows[1].className).toBe('task-row')
+      expect(rows[1].textContent).not.toContain('Overdue')
     })
   })
 })

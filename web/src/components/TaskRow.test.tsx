@@ -37,4 +37,27 @@ describe('TaskRow', () => {
     )
     expect(screen.getByRole('listitem').textContent).toContain('No due date')
   })
+
+  it('flags a past due date that is not done as overdue', () => {
+    render(
+      <ul>
+        <TaskRow task={task('task-1', { dueDate: '2024-01-01' })} now={new Date(2024, 0, 2)} />
+      </ul>,
+    )
+    const row = screen.getByRole('listitem')
+    expect(row.textContent).toContain('Overdue')
+    expect(row.className).toContain('task-row-overdue')
+  })
+
+  it('does not flag tasks due today, done tasks or tasks without a due date', () => {
+    const now = new Date(2024, 0, 2)
+    render(
+      <ul>
+        <TaskRow task={task('a', { dueDate: '2024-01-02' })} now={now} />
+        <TaskRow task={task('b', { dueDate: '2024-01-01', status: 'done' })} now={now} />
+        <TaskRow task={task('c', { dueDate: null })} now={now} />
+      </ul>,
+    )
+    expect(screen.queryByText('Overdue')).toBeNull()
+  })
 })
