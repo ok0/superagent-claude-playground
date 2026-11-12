@@ -43,3 +43,19 @@ test('list returns the first page of four tasks', () => {
   assert.deepEqual(page.items.map((t) => t.id), ['task-1', 'task-2'])
   assert.equal(page.next, 2)
 })
+
+test('list pages through every task, including the last', () => {
+  const service = makeService()
+  for (let i = 1; i <= 5; i++) service.create({ title: `t${i}` }, 'alice')
+  const seen: string[] = []
+  let start: number | null = 0
+  while (start !== null) {
+    const page: { items: { id: string }[]; next: number | null } = service.list({ start, limit: 2 })
+    seen.push(...page.items.map((t) => t.id))
+    start = page.next
+  }
+  assert.deepEqual(seen, ['task-1', 'task-2', 'task-3', 'task-4', 'task-5'])
+  const all = service.list({ start: 0, limit: 20 })
+  assert.equal(all.items.length, 5)
+  assert.equal(all.next, null)
+})
