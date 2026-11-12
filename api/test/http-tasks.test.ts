@@ -84,3 +84,30 @@ test('GET /tasks pages with a cursor', () =>
     const secondBody = (await second.json()) as { items: { id: string }[] }
     assert.deepEqual(secondBody.items.map((t) => t.id), ['task-2'])
   }))
+
+test('PATCH /tasks/:id updates only the given fields', () =>
+  withServer(async (base) => {
+    await (await createTask(base, { title: 'orig', dueDate: '2026-02-01' })).text()
+    const patch = (id: string, body: unknown, headers: Record<string, string> = AUTH_A) =>
+      fetch(base + '/tasks/' + id, {
+        method: 'PATCH',
+        headers: { ...headers, 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    const ok = await patch('task-1', { status: 'done' })
+    assert.equal(ok.status, 200)
+    const task = (await ok.json()) as { title: string; status: string; dueDate: string }
+    assert.deepEqual([task.title, task.status, task.dueDate], ['orig', 'done', '2026-02-01'])
+    const bad = await patch('task-1', { status: 'nope' })
+    assert.equal(bad.status, 400)
+    await bad.text()
+    const missing = await patch('task-404', { title: 'x' })
+    assert.equal(missing.status, 404)
+    await missing.text()
+    const denied = await patch('task-1', { title: 'x' }, AUTH_B)
+    assert.equal(denied.status, 403)
+    await denied.text()
+    const unauth = await fetch(base + '/tasks/task-1', { method: 'PATCH', body: '{}' })
+    assert.equal(unauth.status, 401)
+    await unauth.text()
+  }))
