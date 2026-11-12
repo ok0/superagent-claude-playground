@@ -115,3 +115,12 @@ test('GET /tasks returns the last task on a single page', () =>
     assert.equal(body.items.length, 3)
     assert.equal(body.nextCursor, null)
   }))
+
+test('GET /tasks rejects a limit that is 0, negative or not a whole number', () =>
+  withServer(async (base) => {
+    for (const limit of ['0', '-1', '1.5', 'abc', '']) {
+      const res = await fetch(base + '/tasks?limit=' + limit, { headers: AUTH_A })
+      assert.equal(res.status, 400, 'limit=' + limit)
+      await res.text()
+    }
+  }))
