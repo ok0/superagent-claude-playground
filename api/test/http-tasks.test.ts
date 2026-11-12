@@ -84,3 +84,23 @@ test('GET /tasks pages with a cursor', () =>
     const secondBody = (await second.json()) as { items: { id: string }[] }
     assert.deepEqual(secondBody.items.map((t) => t.id), ['task-2'])
   }))
+
+test('GET /tasks pages through every task', () =>
+  withServer(async (base) => {
+    for (let i = 1; i <= 5; i++) await createTask(base, { title: 'task ' + i }).then((r) => r.text())
+    const titles: string[] = []
+    let cursor: string | null = null
+    let pages = 0
+    do {
+      const res: Response = await fetch(
+        base + '/tasks?limit=2' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : ''),
+        { headers: AUTH_A },
+      )
+      const body = (await res.json()) as { items: { title: string }[]; nextCursor: string | null }
+      titles.push(...body.items.map((t) => t.title))
+      cursor = body.nextCursor
+      pages++
+    } while (cursor !== null && pages < 10)
+    assert.deepEqual(titles, ['task 1', 'task 2', 'task 3', 'task 4', 'task 5'])
+    assert.equal(pages, 3)
+  }))
