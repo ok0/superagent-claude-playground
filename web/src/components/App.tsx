@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { TaskClient } from '../api/client.ts'
-import type { NewTask, StatusFilterValue, Task } from '../types.ts'
+import type { NewTask, StatusFilterValue, Task, TaskStatus } from '../types.ts'
 import { ErrorBanner } from './ErrorBanner.tsx'
 import { StatusFilter } from './StatusFilter.tsx'
 import { TaskForm } from './TaskForm.tsx'
@@ -50,6 +50,16 @@ export function App({ client }: AppProps) {
     }
   }
 
+  async function changeStatus(id: string, status: TaskStatus) {
+    try {
+      const updated = await client.updateStatus(id, status)
+      setTasks(prev => prev.map(t => (t.id === id ? updated : t)))
+      setError(null)
+    } catch (e) {
+      setError(messageOf(e))
+    }
+  }
+
   return (
     <main>
       <h1>Tasks</h1>
@@ -59,7 +69,10 @@ export function App({ client }: AppProps) {
       {loading ? (
         <p>Loading…</p>
       ) : (
-        <TaskList tasks={filter === 'all' ? tasks : tasks.filter(t => t.status === filter)} />
+        <TaskList
+          tasks={filter === 'all' ? tasks : tasks.filter(t => t.status === filter)}
+          onStatusChange={changeStatus}
+        />
       )}
     </main>
   )

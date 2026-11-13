@@ -84,3 +84,28 @@ test('GET /tasks pages with a cursor', () =>
     const secondBody = (await second.json()) as { items: { id: string }[] }
     assert.deepEqual(secondBody.items.map((t) => t.id), ['task-2'])
   }))
+
+const patchTask = (base: string, id: string, body: unknown, headers: Record<string, string> = AUTH_A) =>
+  fetch(base + '/tasks/' + id, {
+    method: 'PATCH',
+    headers: { ...headers, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+test('PATCH /tasks/:id updates a task, and blocks done -> todo with 409', () =>
+  withServer(async (base) => {
+    await (await createTask(base, { title: 'x', status: 'done' })).text()
+    const blocked = await patchTask(base, 'task-1', { status: 'todo' })
+    assert.equal(blocked.status, 409)
+    await blocked.text()
+    const ok = await patchTask(base, 'task-1', { title: 'renamed', status: 'doing' })
+    assert.equal(ok.status, 200)
+    const body = (await ok.json()) as { title: string; status: string }
+    assert.deepEqual([body.title, body.status], ['renamed', 'doing'])
+    const forbidden = await patchTask(base, 'task-1', { title: 'z' }, AUTH_B)
+    assert.equal(forbidden.status, 403)
+    await forbidden.text()
+    const missing = await patchTask(base, 'task-99', { title: 'z' })
+    assert.equal(missing.status, 404)
+    await missing.text()
+  }))

@@ -32,3 +32,9 @@ export class NotFoundError extends ServiceError {
     super(404, 'not_found', message)
   }
 }
+
+export class ConflictError extends ServiceError {
+  constructor(message: string) {
+    super(409, 'conflict', message)
+  }
+}

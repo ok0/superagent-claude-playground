@@ -1,9 +1,21 @@
 import { TASK_STATUSES } from '../store/types.ts'
-import type { NewTask, TaskStatus } from '../store/types.ts'
+import type { NewTask, TaskPatch, TaskStatus } from '../store/types.ts'
 import { ValidationError } from './errors.ts'
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
 const NEW_TASK_KEYS = ['title', 'status', 'dueDate']
+
+function parseTitle(raw: unknown): string {
+  if (typeof raw !== 'string') throw new ValidationError('title must be a string')
+  const title = raw.trim()
+  if (title.length < 1 || title.length > 200) throw new ValidationError('title must be 1-200 characters')
+  return title
+}
+
+function parseDueDate(value: unknown): string | null {
+  if (value !== null && !isDateKey(value)) throw new ValidationError('dueDate must be YYYY-MM-DD or null')
+  return value as string | null
+}
 
 export function isDateKey(value: unknown): value is string {
   if (typeof value !== 'string' || !DATE_KEY.test(value)) return false
@@ -30,17 +42,25 @@ export function validateNewTask(input: unknown): NewTask {
   for (const key of Object.keys(record)) {
     if (!NEW_TASK_KEYS.includes(key)) throw new ValidationError(`unknown field: ${key}`)
   }
-  const raw = record.title
-  if (typeof raw !== 'string') throw new ValidationError('title must be a string')
-  const title = raw.trim()
-  if (title.length < 1 || title.length > 200) throw new ValidationError('title must be 1-200 characters')
+  const title = parseTitle(record.title)
   const draft: NewTask = { title }
   if (record.status !== undefined) draft.status = parseStatus(record.status)
-  if (record.dueDate !== undefined) {
-    if (record.dueDate !== null && !isDateKey(record.dueDate)) {
-      throw new ValidationError('dueDate must be YYYY-MM-DD or null')
-    }
-    draft.dueDate = record.dueDate as string | null
-  }
+  if (record.dueDate !== undefined) draft.dueDate = parseDueDate(record.dueDate)
   return draft
+}
+
+export function validateTaskPatch(input: unknown): TaskPatch {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    throw new ValidationError('body must be an object')
+  }
+  const record = input as Record<string, unknown>
+  for (const key of Object.keys(record)) {
+    if (!NEW_TASK_KEYS.includes(key)) throw new ValidationError(`unknown field: ${key}`)
+  }
+  const patch: TaskPatch = {}
+  if (record.title !== undefined) patch.title = parseTitle(record.title)
+  if (record.status !== undefined) patch.status = parseStatus(record.status)
+  if (record.dueDate !== undefined) patch.dueDate = parseDueDate(record.dueDate)
+  if (Object.keys(patch).length === 0) throw new ValidationError('no fields to update')
+  return patch
 }

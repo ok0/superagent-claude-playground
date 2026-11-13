@@ -1,4 +1,4 @@
-import type { NewTask, Task } from '../types.ts'
+import type { NewTask, Task, TaskStatus } from '../types.ts'
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Pick<Response, 'ok' | 'status' | 'json'>>
 
@@ -17,6 +17,7 @@ export class ApiError extends Error {
 export interface TaskClient {
   listTasks(): Promise<Task[]>
   createTask(input: NewTask): Promise<Task>
+  updateStatus(id: string, status: TaskStatus): Promise<Task>
 }
 
 export function createTaskClient(o: { baseUrl: string; token: string; fetch?: FetchLike }): TaskClient {
@@ -48,6 +49,15 @@ export function createTaskClient(o: { baseUrl: string; token: string; fetch?: Fe
         method: 'POST',
         headers: { ...headers, 'content-type': 'application/json' },
         body: JSON.stringify(input),
+      })
+      if (!res.ok) return fail(res)
+      return (await res.json()) as Task
+    },
+    async updateStatus(id, status) {
+      const res = await send(o.baseUrl + '/tasks/' + encodeURIComponent(id), {
+        method: 'PATCH',
+        headers: { ...headers, 'content-type': 'application/json' },
+        body: JSON.stringify({ status }),
       })
       if (!res.ok) return fail(res)
       return (await res.json()) as Task

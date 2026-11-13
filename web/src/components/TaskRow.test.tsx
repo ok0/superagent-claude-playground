@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen, fireEvent } from '@testing-library/react'
 import type { Task } from '../types.ts'
 import { TaskRow } from './TaskRow.tsx'
 
@@ -36,5 +36,18 @@ describe('TaskRow', () => {
       </ul>,
     )
     expect(screen.getByRole('listitem').textContent).toContain('No due date')
+  })
+
+  it('reports status changes and disables todo for done tasks', () => {
+    const onChange = vi.fn()
+    render(
+      <ul>
+        <TaskRow task={task('task-1', { status: 'done' })} onStatusChange={onChange} />
+      </ul>,
+    )
+    const select = screen.getByRole('combobox') as HTMLSelectElement
+    expect((screen.getByRole('option', { name: 'To do' }) as HTMLOptionElement).disabled).toBe(true)
+    fireEvent.change(select, { target: { value: 'doing' } })
+    expect(onChange).toHaveBeenCalledWith('task-1', 'doing')
   })
 })

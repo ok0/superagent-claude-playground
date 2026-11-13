@@ -12,6 +12,12 @@ export interface Task {
   updatedAt: string
 }
 
+export interface TaskPatch {
+  title?: string
+  status?: TaskStatus
+  dueDate?: string | null
+}
+
 export interface NewTask {
   title: string
   status?: TaskStatus
