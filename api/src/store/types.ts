@@ -8,6 +8,7 @@ export interface Task {
   status: TaskStatus
   dueDate: string | null
   ownerId: string
+  assigneeId: string | null
   createdAt: string
   updatedAt: string
 }
