@@ -13,7 +13,7 @@ export const AUTH_B = { authorization: 'Bearer tok-b' }
 export async function startServer(): Promise<{ base: string; close(): Promise<void> }> {
   const tokens = new Map([['tok-a', 'alice'], ['tok-b', 'bob']])
   const config: AppConfig = { port: 0, pageSize: 20, maxPageSize: 100, tokens, logLevel: 'error' }
-  const service = createTaskService({ store: createMemoryStore(), nextId: createIdGenerator(), members: new Set(tokens.values()) })
+  const service = createTaskService({ store: createMemoryStore(), nextId: createIdGenerator() })
   const logger = createLogger({ level: 'error', sink: () => {} })
   const server = createApp({ config, service, logger })
   server.listen(0, '127.0.0.1')

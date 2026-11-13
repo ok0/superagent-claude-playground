@@ -21,10 +21,7 @@ The `web` workspace is a React + Vite UI for the task list, status filter and ne
 - `GET /tasks?limit&cursor`
 - `POST /tasks`
 - `GET /tasks/:id`
-- `DELETE /tasks/:id` (creator only)
-- `PUT /tasks/:id/assignee` with `{ "assigneeId": "user" | null }` (creator only; assignee must be a user from `API_TOKENS`; completed tasks cannot be reassigned)
-- `PATCH /tasks/:id/status` with `{ "status" }` (creator or assignee)
-- `GET /me/tasks?limit&cursor` (tasks assigned to the caller)
+- `DELETE /tasks/:id`
 
 Task routes require a Bearer token from `API_TOKENS`.
 

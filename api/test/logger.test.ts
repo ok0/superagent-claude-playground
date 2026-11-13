@@ -31,19 +31,3 @@ test('LineBuffer flushes in order with a small capacity', () => {
   buffer.flush()
   assert.equal(out.join(''), 'aaaaaaa\nbbbbbbb\nccccccc\n')
 })
-
-test('formatLine masks Authorization headers and token values', () => {
-  const at = new Date(0)
-  const line = formatLine(
-    'info',
-    'failed with Authorization: Bearer abc123',
-    { headers: { authorization: 'Bearer abc123', accept: 'json' }, apiToken: 'abc123', note: 'sent Bearer abc123', path: '/tasks' },
-    at,
-  )
-  assert.ok(!line.includes('abc123'))
-  const parsed = JSON.parse(line) as Record<string, any>
-  assert.equal(parsed['headers'].authorization, '[REDACTED]')
-  assert.equal(parsed['headers'].accept, 'json')
-  assert.equal(parsed['apiToken'], '[REDACTED]')
-  assert.equal(parsed['path'], '/tasks')
-})

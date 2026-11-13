@@ -7,11 +7,7 @@ import { createTaskService } from './services/task-service.ts'
 
 const config = loadConfig()
 const logger = createLogger({ level: config.logLevel })
-const service = createTaskService({
-  store: createMemoryStore(),
-  nextId: createIdGenerator(),
-  members: new Set(config.tokens.values()),
-})
+const service = createTaskService({ store: createMemoryStore(), nextId: createIdGenerator() })
 const server = createApp({ config, service, logger })
 
 server.listen(config.port, () => {

@@ -27,12 +27,6 @@ export class ForbiddenError extends ServiceError {
   }
 }
 
-export class ConflictError extends ServiceError {
-  constructor(message: string) {
-    super(409, 'conflict', message)
-  }
-}
-
 export class NotFoundError extends ServiceError {
   constructor(message: string) {
     super(404, 'not_found', message)
