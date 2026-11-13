@@ -34,6 +34,38 @@ export function taskRoutes(deps: { service: TaskService; config: AppConfig }): R
     },
     {
       method: 'GET',
+      pattern: '/me/tasks',
+      handler: ({ req, res, url }) => {
+        const userId = authenticate(req.headers.authorization, config.tokens)
+        const limit = Math.min(Number(url.searchParams.get('limit') ?? config.pageSize), config.maxPageSize)
+        const start = decodeCursor(url.searchParams.get('cursor'))
+        const page = service.listAssigned(userId, { start, limit })
+        sendJson(res, 200, {
+          items: page.items,
+          nextCursor: page.next === null ? null : encodeCursor(page.next),
+        })
+      },
+    },
+    {
+      method: 'PATCH',
+      pattern: '/tasks/:id/status',
+      handler: async ({ req, res, params }) => {
+        const userId = authenticate(req.headers.authorization, config.tokens)
+        const body = (await readJson(req)) as { status?: unknown } | null
+        sendJson(res, 200, service.setStatus(params.id!, body?.status, userId))
+      },
+    },
+    {
+      method: 'PUT',
+      pattern: '/tasks/:id/assignee',
+      handler: async ({ req, res, params }) => {
+        const userId = authenticate(req.headers.authorization, config.tokens)
+        const body = (await readJson(req)) as { assigneeId?: unknown } | null
+        sendJson(res, 200, service.setAssignee(params.id!, body?.assigneeId ?? null, userId))
+      },
+    },
+    {
+      method: 'GET',
       pattern: '/tasks/:id',
       handler: ({ req, res, params }) => {
         authenticate(req.headers.authorization, config.tokens)

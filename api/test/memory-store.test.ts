@@ -9,6 +9,7 @@ const task = (id: string, title = id): Task => ({
   status: 'todo',
   dueDate: null,
   ownerId: 'alice',
+  assigneeId: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 })
