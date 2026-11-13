@@ -1,6 +1,7 @@
 import { authenticate } from '../../auth/middleware.ts'
 import type { AppConfig } from '../../config/index.ts'
 import type { TaskService } from '../../services/task-service.ts'
+import { ValidationError } from '../../services/errors.ts'
 import { readJson } from '../body.ts'
 import { decodeCursor, encodeCursor } from '../cursor.ts'
 import { sendJson } from '../respond.ts'
@@ -38,6 +39,7 @@ export function taskRoutes(deps: { service: TaskService; config: AppConfig }): R
       handler: ({ req, res, url }) => {
         const userId = authenticate(req.headers.authorization, config.tokens)
         const limit = Math.min(Number(url.searchParams.get('limit') ?? config.pageSize), config.maxPageSize)
+        if (!Number.isInteger(limit) || limit < 1) throw new ValidationError('invalid limit')
         const start = decodeCursor(url.searchParams.get('cursor'))
         const page = service.listAssigned(userId, { start, limit })
         sendJson(res, 200, {
@@ -61,7 +63,7 @@ export function taskRoutes(deps: { service: TaskService; config: AppConfig }): R
       handler: async ({ req, res, params }) => {
         const userId = authenticate(req.headers.authorization, config.tokens)
         const body = (await readJson(req)) as { assigneeId?: unknown } | null
-        sendJson(res, 200, service.setAssignee(params.id!, body?.assigneeId ?? null, userId))
+        sendJson(res, 200, service.setAssignee(params.id!, body !== null && typeof body === 'object' && 'assigneeId' in body ? body.assigneeId : undefined, userId))
       },
     },
     {
