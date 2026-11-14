@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package tasktracker.health;
+
+// Response body of GET /health.
+message HealthResponse {
+  // Service status, e.g. "ok".
+  string status = 1;
+}
