@@ -37,4 +37,28 @@ describe('TaskRow', () => {
     )
     expect(screen.getByRole('listitem').textContent).toContain('No due date')
   })
+
+  it('flags past-due tasks that are not done as overdue', () => {
+    render(
+      <ul>
+        <TaskRow task={task('task-1', { dueDate: '2000-01-01' })} />
+      </ul>,
+    )
+    const row = screen.getByRole('listitem')
+    expect(row.className).toContain('task-row-overdue')
+    expect(row.textContent).toContain('Overdue')
+  })
+
+  it('does not flag done or future tasks as overdue', () => {
+    render(
+      <ul>
+        <TaskRow task={task('task-1', { status: 'done', dueDate: '2000-01-01' })} />
+        <TaskRow task={task('task-2', { dueDate: '2999-12-31' })} />
+      </ul>,
+    )
+    for (const row of screen.getAllByRole('listitem')) {
+      expect(row.className).not.toContain('task-row-overdue')
+      expect(row.textContent).not.toContain('Overdue')
+    }
+  })
 })

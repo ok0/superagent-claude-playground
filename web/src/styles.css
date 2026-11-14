@@ -6,3 +6,6 @@ body { font-family: system-ui, sans-serif; margin: 2rem; color: #1f2933; }
 .badge-doing { background: #2563eb; }
 .badge-done { background: #15803d; }
 [role="alert"] { color: #b91c1c; }
+.task-row-overdue { border-left: 4px solid #b91c1c; padding-left: 0.5rem; background: #fef2f2; }
+.task-row-overdue .task-due { color: #b91c1c; font-weight: 600; }
+.badge-overdue { background: #b91c1c; }
